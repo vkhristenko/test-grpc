@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.5.1)
+
+project(HelloWorld LANGUAGES C CXX VERSION 0.0.0)
+
+# for c++ flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++17")
+
+# c++ inclusion path
+include_directories(${PROJECT_SOURCE_DIR})
+
+# build stuff
+foreach(target_ test)
+    add_executable(${target_} "${target_}.cpp")
+    target_link_libraries(${target_})
+endforeach(target_)
