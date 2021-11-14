@@ -1,5 +1,6 @@
 #include <iostream> 
 #include <string>
+#include <unordered_map>
 
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -17,11 +18,40 @@ using publisher::TickRequest;
 using publisher::TickReply;
 
 class PublisherServiceImpl final : public Publisher::Service {
+public:
+
+
+private:
     Status GetNextTick(ServerContext* ctx, 
             TickRequest const* request,
             TickReply* reply) {
         std::cout << "served client" << std::endl;
         return Status::OK;
+    }
+
+    // market data
+    std::unordered_map<std::string, std::vector<publisher::Tick>> ticks;
+
+    void Server::parseInput() {
+        std::ifstream f{pathToData};
+        if (!f.is_open()) throw FileError{pathToData};
+
+        std::string buffer;
+        unsigned int nlines = 0;
+        while (std::getline(f, buffer)) {
+            // skip the header...
+            if (buffer[0] == '#') { nlines++; continue; }
+
+            // fill in according to the symbol
+            auto tick = msg_inf::Tick::fromString(buffer);
+            auto it = ticks.find(tick.symbol);
+            if (it == ticks.end()) {
+                ticks[tick.symbol].push_back(tick);
+            } else {
+                it->second.push_back(tick);
+            }
+            nlines++;
+        }
     }
 };
 
