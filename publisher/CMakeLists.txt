@@ -23,6 +23,8 @@ project(Publisher LANGUAGES C CXX VERSION 0.0.0)
 
 set (CMAKE_CXX_STANDARD 11)
 
+find_package(absl REQUIRED CONFIG)
+
 # check protobuf
 set(protobuf_MODULE_COMPATIBLE TRUE)
 find_package(Protobuf CONFIG REQUIRED)
@@ -74,7 +76,7 @@ target_link_libraries(hw_grpc_proto
   ${_PROTOBUF_LIBPROTOBUF})
 
 # Targets
-foreach(_target publisher_server publisher_client)
+foreach(_target publisher_server publisher_client publisher_server_async publisher_server_callback)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto

@@ -13,54 +13,53 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using publisher::Publisher;
-using publisher::TickRequest;
-using publisher::TickReply;
+using publisher::PubSubService;
+using publisher::SubscribeOneRequest;
+using publisher::SubscribeOneReply;
+using publisher::SubscribeTwoRequest;
+using publisher::SubscribeTwoReply;
+using publisher::SubscribeThreeRequest;
+using publisher::SubscribeThreeReply;
 
-class PublisherServiceImpl final : public Publisher::Service {
+class Publisher final : public PubSubService::Service {
 public:
 
 
 private:
-    Status GetNextTick(ServerContext* ctx, 
-            TickRequest const* request,
-            TickReply* reply) {
-        std::cout << "served client" << std::endl;
+    Status SubscribeOne(
+            ServerContext* ctx,
+            SubscribeOneRequest const* request,
+            SubscribeOneReply* reply) {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+
         return Status::OK;
     }
+    
+    Status SubscribeTwo(
+            ServerContext* ctx,
+            SubscribeTwoRequest const* request,
+            SubscribeTwoReply* reply) {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-    // market data
-    std::unordered_map<std::string, std::vector<publisher::Tick>> ticks;
+        return Status::OK;
+    }
+    
+    Status SubscribeThree(
+            ServerContext* ctx,
+            SubscribeThreeRequest const* request,
+            SubscribeThreeReply* reply) {
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-    void Server::parseInput() {
-        std::ifstream f{pathToData};
-        if (!f.is_open()) throw FileError{pathToData};
-
-        std::string buffer;
-        unsigned int nlines = 0;
-        while (std::getline(f, buffer)) {
-            // skip the header...
-            if (buffer[0] == '#') { nlines++; continue; }
-
-            // fill in according to the symbol
-            auto tick = msg_inf::Tick::fromString(buffer);
-            auto it = ticks.find(tick.symbol);
-            if (it == ticks.end()) {
-                ticks[tick.symbol].push_back(tick);
-            } else {
-                it->second.push_back(tick);
-            }
-            nlines++;
-        }
+        return Status::OK;
     }
 };
 
 int main(int argc, char** argv) {
     std::string addr{"localhost:50051"};
-    PublisherServiceImpl service;
+    Publisher service;
 
-    grpc::EnableDefaultHealthCheckService(true);
-    grpc::reflection::InitProtoReflectionServerBuilderPlugin();
+    //grpc::EnableDefaultHealthCheckService(true);
+    //grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(addr, grpc::InsecureServerCredentials());

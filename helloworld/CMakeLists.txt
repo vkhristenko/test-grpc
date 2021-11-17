@@ -23,6 +23,8 @@ project(HelloWorld LANGUAGES C CXX VERSION 0.0.0)
 
 set (CMAKE_CXX_STANDARD 11)
 
+find_package(absl REQUIRED CONFIG)
+
 # check protobuf
 set(protobuf_MODULE_COMPATIBLE TRUE)
 find_package(Protobuf CONFIG REQUIRED)

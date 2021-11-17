@@ -17,15 +17,19 @@ syntax = "proto3";
 package publisher;
 
 // The greeting service definition.
-service Publisher {
-    rpc GetNextTick(TickRequest) returns (TickReply) {}
+service PubSubService {
+    rpc SubscribeOne(SubscribeOneRequest) returns (SubscribeOneReply) {}
+    rpc SubscribeTwo(SubscribeTwoRequest) returns (SubscribeTwoReply) {}
+    rpc SubscribeThree(SubscribeThreeRequest) returns (SubscribeThreeReply) {}
+    rpc SubscribeFour(SubscribeFourRequest) returns (stream SubscribeFourReply) {}
 }
 
-message TickRequest {
-    string symbol = 1;
-}
+message SubscribeOneRequest {}
+message SubscribeTwoRequest {}
+message SubscribeThreeRequest {}
+message SubscribeFourRequest {}
 
-message TickReply {
-    string symbol = 1;
-    double price = 2;
-}
+message SubscribeOneReply {}
+message SubscribeTwoReply {}
+message SubscribeThreeReply {}
+message SubscribeFourReply {}
