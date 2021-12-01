@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include <grpcpp/grpcpp.h>
 
@@ -24,22 +25,28 @@ void RunOneStdFunc(Processor::Stub* stub) {
 
         auto const deadline = std::chrono::system_clock::now() +
             std::chrono::milliseconds(1000);
-        ClientContext ctx;
-        //ctx.set_deadline(deadline);
-        ProcessRequest request;
-        ProcessReply reply;
-        stub->async()->Process(&ctx, &request, &reply, [&done](Status status) {
-            CHECK_STATUS(status);
-            done = true;
-        });
+        std::shared_ptr<ClientContext> ctx = std::make_shared<ClientContext>();
+        ctx->set_deadline(deadline);
+        std::shared_ptr<ProcessRequest> request = std::make_shared<ProcessRequest>();
+        auto reply = std::make_shared<ProcessReply>();
+        // https://newbedev.com/why-is-a-lambda-not-movable-if-it-captures-a-not-copiable-object-using-std-move
+        // can not move into the lambda that we pass below as 
+        // std function expects a lambda that is copyable
+        stub->async()->Process(ctx.get(), request.get(), reply.get(), 
+            [ctx, request, reply, &done] (Status status) {
+                CHECK_STATUS(status);
+                done = true;
+            }
+        );
 
-        bool cancel_tried = false;
+        //bool cancel_tried = false;
         while (!done) {
-            if (cancel_tried) continue;
+       /*     if (cancel_tried) continue;
             if (std::chrono::system_clock::now() > deadline) {
                 ctx.TryCancel();
                 cancel_tried= true;
             }
+            */
         }
         std::cout << "all done " << std::endl;
     }

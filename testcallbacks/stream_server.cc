@@ -18,16 +18,24 @@ using namespace testcallbacks;
 
 struct RequestManager;
 
-struct SimpleServerReactor : public ServerUnaryReactor {
-    SimpleServerReactor(RequestManager& manager) : manager{manager} {}
+struct SimpleServerReactor : public ServerWriteReactor<StartStreamMessageOut> {
+    SimpleServerReactor(RequestManager& manager)
+        : manager{manager} 
+    {}
     RequestManager& manager;
+    std::atomic<bool> writeDone = true;
 
     void OnDone() override;
+    void OnWriteDone(bool) override;
 };
 
 struct Request {
-    Request(RequestManager& manager) : reactor{manager} {}
+    Request(RequestManager& manager, CallbackServerContext* ctx) 
+        : reactor{manager} 
+        , ctx{ctx}
+    {}
     SimpleServerReactor reactor;
+    CallbackServerContext* ctx;
 };
 
 struct RequestManager {
@@ -50,6 +58,31 @@ void SimpleServerReactor::OnDone() {
     }
 }
 
+void SimpleServerReactor::OnWriteDone(bool ok) {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
+
+    // TODO what do we do in case of not ok ?
+    writeDone = true;
+    if (ok) {
+        std::cout << "write was ok" << std::endl;
+    } else {
+        std::cout << "write was __not__ ok" << std::endl;
+    }
+}
+
+void WriteMsgs(Request* req, unsigned int const n) {
+    for (unsigned int i=0; i<n; i++) {
+        auto secs = std::chrono::seconds(GenRandom());
+        std::this_thread::sleep_for(secs);
+        std::cout << "slept for " << secs.count() << " sending msg now..."<< std::endl;
+        StartStreamMessageOut msg;
+        msg.set_value(i);
+        req->reactor.writeDone = false;
+        req->reactor.StartWrite(&msg);
+        while (!req->reactor.writeDone);
+    }
+}
+
 void RunRequests() {
     for (;;) {
         Request* request = nullptr;
@@ -60,10 +93,13 @@ void RunRequests() {
         }
         
         if (request) {
+            WriteMsgs(request, 10);
+            /*
             std::cout << "Processing request" << std::endl;
             auto secs = std::chrono::seconds(GenRandom());
             std::this_thread::sleep_for(secs);
             std::cout << "slept for " << secs.count() << std::endl;
+            */
             request->reactor.Finish(Status::OK);
 
             {
@@ -74,17 +110,17 @@ void RunRequests() {
     }
 }
 
-class ProcessorImpl : public Processor::CallbackService {
+class StreamProcessorImpl : public StreamProcessor::CallbackService {
 public:
-    ProcessorImpl() {}
+    StreamProcessorImpl() {}
 
-    ServerUnaryReactor* Process(
+    ServerWriteReactor<StartStreamMessageOut>* 
+    StartStream(
             CallbackServerContext* ctx,
-            ProcessRequest const* request,
-            ProcessReply* reply) override {
+            StartStreamRequest const* request) override {
         std::cout << __PRETTY_FUNCTION__ << std::endl;
 
-        auto req = std::make_unique<Request>(manager);
+        auto req = std::make_unique<Request>(manager, ctx);
         auto req_ptr = req.get();
         {
             std::lock_guard<std::mutex> lck{manager.mu};
@@ -103,7 +139,7 @@ void Run() {
     std::thread t{RunRequests};
 
     std::string addr{"localhost:50051"};
-    ProcessorImpl service;
+    StreamProcessorImpl service;
 
     ServerBuilder builder;
     builder.AddListeningPort(addr, grpc::InsecureServerCredentials());

@@ -22,11 +22,13 @@ service Processor {
 }
 
 service StreamProcessor {
-    rpc StartStream(StartStreamRequest) returns (StartStreamMessageOut) {}
+    rpc StartStream(StartStreamRequest) returns (stream StartStreamMessageOut) {}
 }
 
 message ProcessRequest {}
 message ProcessReply {}
 
 message StartStreamRequest {}
-message StartStreamMessageOut {}
+message StartStreamMessageOut {
+    uint32 value = 1;
+}

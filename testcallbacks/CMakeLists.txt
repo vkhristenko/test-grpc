@@ -78,7 +78,7 @@ target_link_libraries(hw_grpc_proto
   ${_PROTOBUF_LIBPROTOBUF})
 
 # Targets
-foreach(_target server client server_1)
+foreach(_target server client server_1 stream_server stream_client)
   add_executable(${_target} "${_target}.cc" common.h)
   target_link_libraries(${_target}
     hw_grpc_proto
